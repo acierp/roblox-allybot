@@ -4,6 +4,8 @@ from itertools import cycle
 import termcolor
 import json
 import time
+import random
+import string
 import os
 os.system('color')
 
@@ -26,7 +28,7 @@ def tokenUpdater(cookie):
     cookies = {
         ".ROBLOSECURITY": cookie
     }
-    r = req.post("https://auth.roblox.com/v1/logout", cookies=cookies)
+    r = req.post("https://auth.roblox.com/v1/logout", cookies=cookies, headers={"connection":"keep-alive"})
     if r.status_code == 200 or r.status_code == 403:
         currenttoken.append(r.headers['x-csrf-token'])
         print('Successfully updated token')
@@ -37,7 +39,8 @@ def sendRequest(selfgroup, cookie, proxy, groupid):
         ".ROBLOSECURITY": cookie
     }
     headers = {
-        "x-csrf-token": currenttoken[0]
+        "x-csrf-token": currenttoken[0],
+        "connection":"keep-alive"
     }
     proxy = {
         "https": "https://" + next(ProxyPool)
@@ -52,7 +55,8 @@ def sendRequest(selfgroup, cookie, proxy, groupid):
         "https": "https://" + next(ProxyPool)
         }
         return sendRequest(selfgroup, cookie, proxy, groupid)
-
+    elif r.status_code == 427:
+        tokenUpdater(cookie)
     else:
         print(r.text, r.status_code)
                 
@@ -65,7 +69,7 @@ def scrapeGroups(cookie, proxy, keyword, cursor=None):
     }
     if cursor == None:
         r = req.get(
-            f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100', cookies=cookies, proxies=proxy).json()
+            f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100', headers={"connection":"keep-alive"}, cookies=cookies, proxies=proxy).json()
         for breadchill in r['data']:
             squeakalusnoob = breadchill['id']
             print(f'Successfully scraped {squeakalusnoob}')
@@ -76,7 +80,7 @@ def scrapeGroups(cookie, proxy, keyword, cursor=None):
             except KeyError:
                 print('Finished checking all pages on a single thread.')
     else:
-        r = req.get(f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100&cursor={cursor}', cookies=cookies, proxies=proxy).json()
+        r = req.get(f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100&cursor={cursor}', cookies=cookies, headers={"connection":"keep-alive"}, proxies=proxy).json()
         for breadchill in r['data']:
             squeakalusnoob = breadchill['id']
             print(f'Successfully scraped {squeakalusnoob}')
@@ -87,9 +91,31 @@ def scrapeGroups(cookie, proxy, keyword, cursor=None):
             except KeyError:
                 print('Finished checking all pages on a single thread.')
 
-tokenUpdater(cookie)
-for key in keywords:
-    proxy = {
-        "https": "https://" + next(ProxyPool)
-    }
-    threading.Thread(target=scrapeGroups, args=[cookie, proxy, key]).start()
+def scrapeRandom(cookie):
+    while True:
+        proxy = {
+            "https": "https://" + next(ProxyPool)
+        }
+        groupid = ('').join(random.choices(string.digits, k=7))
+        sendRequest(selfgroupid, cookie, proxy, groupid)
+
+print('''
+acier ally bot
+
+[1] Scrape by keyword
+[2] Scrape by random group''')
+choice = input('Choice: ')
+if "1" in choice:
+    tokenUpdater(cookie)
+    for key in keywords:
+        proxy = {
+            "https": "https://" + next(ProxyPool)
+        }
+        threading.Thread(target=scrapeGroups, args=[cookie, proxy, key]).start()
+elif "2" in choice:
+    tokenUpdater(cookie)
+    for _ in range(500):
+        proxy = {
+            "https": "https://" + next(ProxyPool)
+        }
+        threading.Thread(target=scrapeRandom, args=[cookie]).start()
