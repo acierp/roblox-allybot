@@ -16,7 +16,7 @@ with open('proxies.txt','r+', encoding='utf-8') as f:
 cookie = config['cookie']
 selfgroupid = config['selfgroupid']
 
-keywords = ['Military', 'Roleplay', 'Fan', 'Fun', 'Youtube', 'Games', 'Roblox']
+keywords = ['Military', 'Roleplay', 'Fan', 'Fun', 'Youtube', 'Games', 'Roblox', 'Productions', 'Hi', 'Noob', 'Raid', 'Group', 'difficult', 'easy', 'fun', 'funny', 'hard', 'friend']
 req = requests.Session()
 
 def tokenUpdater(cookie):
@@ -36,11 +36,19 @@ def sendRequest(selfgroup, cookie, proxy, groupid, cursor=None):
     headers = {
         "x-csrf-token": currenttoken[0]
     }
+    proxy = {
+        "https": "https://" + next(ProxyPool)
+    }
     r = req.post(f'https://groups.roblox.com/v1/groups/{selfgroup}/relationships/allies/{groupid}', cookies=cookies, proxies=proxy, headers=headers)
     if r.status_code == 200:
         print(f'Successfully sent ally request to {groupid}!')
+    else:
+        print(r.text, r.status_code)
                 
 def scrapeGroups(cookie, proxy, keyword, cursor=None):
+    proxy = {
+        "https": "https://" + next(ProxyPool)
+    }
     cookies = {
         ".ROBLOSECURITY": cookie
     }
