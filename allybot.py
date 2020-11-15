@@ -2,6 +2,7 @@ import requests
 import threading
 from itertools import cycle
 import json
+import time
 
 scraped = []
 currenttoken = []
@@ -22,21 +23,22 @@ def tokenUpdater(cookie, proxy):
     cookies = {
         ".ROBLOSECURITY": cookie
     }
-    while True:
-        r = req.post("https://auth.roblox.com/v1/logout", cookies=cookies, proxies=proxy)
-        if r.status_code == 200 or r.status_code == 403:
-            currenttoken.clear()
-            currenttoken.append(r.headers['x-csrf-token'])
-            print('Successfully updated token')
-        else:
-            print('Error when updating token')
-
+    r = req.post("https://auth.roblox.com/v1/logout", cookies=cookies, proxies=proxy)
+    if r.status_code == 200 or r.status_code == 403:
+        currenttoken.clear()
+        currenttoken.append(r.headers['x-csrf-token'])
+        print('Successfully updated token')
+    else:
+        print('Error when updating token')
 def sendRequest(selfgroup, cookie, proxy, cursor=None):
     cookies = {
         ".ROBLOSECURITY": cookie
     }
     while True:
-        for scrape in scraped:   
+        for scrape in scraped:
+            headers = {
+                "x-csrf-token": currenttoken[0]
+            }
             r = req.post(f'https://groups.roblox.com/v1/groups/{selfgroup}/relationships/allies/{scrape}', cookies=cookies, proxies=proxy)
             if r.status_code == 200:
                 print(f'Successfully sent ally request to {scrape}!')
@@ -49,6 +51,8 @@ def scrapeGroups(cookie, proxy, keyword, cursor=None):
         r = req.get(
             f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100', cookies=cookies, proxies=proxy).json()
         for breadchill in r['data']:
+            squeakalusnoob = breadchill['id']
+            print(f'Successfully scraped {squeakalusnoob}')
             scraped.append(breadchill['id'])
             try:
                 cursor = r['nextPageCursor']
@@ -68,15 +72,18 @@ def scrapeGroups(cookie, proxy, keyword, cursor=None):
 def worker(cookie, proxy):
     for key in keywords:
         scrapeGroups(cookie, proxy, key)
-        
-threading.Thread(target=tokenUpdater, args=[cookie]).start()
-for _ in range(50):
-    proxy = {
-        "https": "https://" + next(ProxyPool)
-    }
-    threading.Thread(target=sendRequest, args=[selfgroupid, cookie, proxy]).start()
+
+proxy = {
+    "https": "https://" + next(ProxyPool)
+}
+threading.Thread(target=tokenUpdater, args=[cookie, proxy]).start()
 for keywordpar in keywords:
     proxy = {
         "https": "https://" + next(ProxyPool)
     }
     threading.Thread(target=worker, args=[cookie, proxy]).start()
+for _ in range(50):
+    proxy = {
+        "https": "https://" + next(ProxyPool)
+    }
+    threading.Thread(target=sendRequest, args=[selfgroupid, cookie, proxy]).start()
