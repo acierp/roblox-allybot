@@ -68,10 +68,7 @@ def scrapeGroups(cookie, proxy, keyword, cursor=None):
 def worker(cookie, proxy):
     for key in keywords:
         scrapeGroups(cookie, proxy, key)
-    while True:
-        for scrape in scraped:
-            sendRequest(selfgroupid, scrape, cookie, proxy)
-
+        
 threading.Thread(target=tokenUpdater, args=[cookie]).start()
 for _ in range(50):
     proxy = {
