@@ -1,3 +1,4 @@
+
 import requests
 import threading
 from itertools import cycle
@@ -16,7 +17,7 @@ with open('config.json', 'r+', encoding='utf-8') as f:
     config = json.load(f)
 
 with open('proxies.txt','r+', encoding='utf-8') as f:
-	ProxyPool = cycle(f.read().splitlines())
+    ProxyPool = cycle(f.read().splitlines())
 
 cookie = config['cookie']
 selfgroupid = config['selfgroupid']
@@ -27,8 +28,13 @@ def tokenUpdater(cookie):
     cookies = {
         ".ROBLOSECURITY": cookie
     }
-    r = requests.post("https://auth.roblox.com/v1/logout", cookies=cookies, headers={"connection":"keep-alive"})
+    try:
+        r = requests.post("https://auth.roblox.com/v1/logout", cookies=cookies)
+    except:
+        print('Proxy error')
+        pass
     if r.status_code == 200 or r.status_code == 403:
+        currenttoken.clear()
         currenttoken.append(r.headers['x-csrf-token'])
         print('Successfully updated token')
     else:
@@ -44,7 +50,11 @@ def sendRequest(selfgroup, cookie, proxy, groupid):
     proxy = {
         "https": "https://" + next(ProxyPool)
     }
-    r = requests.post(f'https://groups.roblox.com/v1/groups/{selfgroup}/relationships/allies/{groupid}', cookies=cookies, proxies=proxy, headers=headers)
+    try:
+        r = requests.post(f'https://groups.roblox.com/v1/groups/{selfgroup}/relationships/allies/{groupid}', cookies=cookies, proxies=proxy, headers=headers)
+    except:
+        print('Proxy error')
+        pass
     if r.status_code == 200:
         print(f'Successfully sent ally request to {groupid}!')
     elif r.status_code == 400:
@@ -54,11 +64,9 @@ def sendRequest(selfgroup, cookie, proxy, groupid):
         "https": "https://" + next(ProxyPool)
         }
         return sendRequest(selfgroup, cookie, proxy, groupid)
-    elif r.status_code == 427:
+    if 'Token Validation' in r.text:  
         tokenUpdater(cookie)
-    else:
-        print(r.text, r.status_code)
-                
+                    
 def scrapeGroups(cookie, proxy, keyword, cursor=None):
     proxy = {
         "https": "https://" + next(ProxyPool)
@@ -67,8 +75,11 @@ def scrapeGroups(cookie, proxy, keyword, cursor=None):
         ".ROBLOSECURITY": cookie
     }
     if cursor == None:
-        r = requests.get(
-            f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100', headers={"connection":"keep-alive"}, cookies=cookies, proxies=proxy).json()
+        try:
+            r = requests.get(f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100', headers={"connection":"keep-alive"}, cookies=cookies, proxies=proxy).json()
+        except:
+            print('Proxy error')
+            pass
         for breadchill in r['data']:
             squeakalusnoob = breadchill['id']
             print(f'Successfully scraped {squeakalusnoob}')
@@ -79,7 +90,11 @@ def scrapeGroups(cookie, proxy, keyword, cursor=None):
             except KeyError:
                 print('Finished checking all pages on a single thread.')
     else:
-        r = requests.get(f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100&cursor={cursor}', cookies=cookies, headers={"connection":"keep-alive"}, proxies=proxy).json()
+        try:
+            r = requests.get(f'https://groups.roblox.com/v1/groups/search?keyword={keyword}&limit=100&cursor={cursor}', cookies=cookies, headers={"connection":"keep-alive"}, proxies=proxy).json()
+        except:
+            print('Proxy error')
+            pass
         for breadchill in r['data']:
             squeakalusnoob = breadchill['id']
             print(f'Successfully scraped {squeakalusnoob}')
@@ -96,8 +111,14 @@ def scrapeRandom(cookie):
             "https": "https://" + next(ProxyPool)
         }
         groupid = ('').join(random.choices(string.digits, k=7))
-        sendRequest(selfgroupid, cookie, proxy, groupid)
-
+        try:
+            sendRequest(selfgroupid, cookie, proxy, groupid)
+        except KeyError:
+            print('Random error')
+            pass
+        except:
+            print('Proxy error')
+            sendRequest(selfgroupid, cookie, proxy, groupid)
 print('''
 acier ally bot
 
